@@ -1,4 +1,4 @@
-package in.bank.hdfc.auth.hybridAuth.domain;
+package in.bank.hdfc.auth.hybridAuth.entity;
 
 public enum AuthSessionStatus {
     PENDING,

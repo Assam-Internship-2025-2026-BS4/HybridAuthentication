@@ -1,3 +1,16 @@
 spring:
   application:
     name: hybridAuth
+  datasource:
+    url: jdbc:postgresql://localhost:5432/userdb
+    username: postgres
+    password: sanb123
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+server:
+  port: 8081

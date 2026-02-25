@@ -1,4 +1,4 @@
-package in.bank.hdfc.auth.hybridAuth.domain;
+package in.bank.hdfc.auth.hybridAuth.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -8,13 +8,11 @@ import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
 import java.util.UUID;
-
 @Entity
 @Table(name = "auth_sessions")
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class AuthSession {
 
     @Id
@@ -24,6 +22,10 @@ public class AuthSession {
 
     @Column(nullable = false, unique = true)
     private String sessionToken;
+
+    // 🔹 NEW FIELD FOR QR AUTH
+    @Column(unique = true)
+    private String qrToken;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

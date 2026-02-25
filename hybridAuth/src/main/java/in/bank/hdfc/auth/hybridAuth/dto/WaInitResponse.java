@@ -1,4 +1,11 @@
 package in.bank.hdfc.auth.hybridAuth.dto;
 
-public class Wa_initResponse {
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
+public class WaInitResponse {
+    private String sessionToken;
 }

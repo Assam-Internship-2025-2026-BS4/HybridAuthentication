@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Wa_InitRequest {
+public class WaInitRequest {
     @NotBlank
     private String mobile;
 }
