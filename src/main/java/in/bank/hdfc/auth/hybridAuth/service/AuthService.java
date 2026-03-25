@@ -1,192 +1,153 @@
 package in.bank.hdfc.auth.hybridAuth.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import in.bank.hdfc.auth.hybridAuth.client.SmsClient;
-import in.bank.hdfc.auth.hybridAuth.client.WhatsAppClient;
-import in.bank.hdfc.auth.hybridAuth.dto.AuthInitResponse;
-import in.bank.hdfc.auth.hybridAuth.dto.OtpValidateResponse;
-import in.bank.hdfc.auth.hybridAuth.dto.QrValidateResponse;
-import in.bank.hdfc.auth.hybridAuth.dto.SessionFetchResponse;
-import in.bank.hdfc.auth.hybridAuth.entity.AuthSession;
-import in.bank.hdfc.auth.hybridAuth.enums.AuthType;
-import in.bank.hdfc.auth.hybridAuth.repository.AuthSessionRepository;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
-@Service
+import org.springframework.stereotype.Component;
+
+import in.bank.hdfc.auth.hybridAuth.dto.AuthDataDTO;
+import in.bank.hdfc.auth.hybridAuth.dto.JourneyHeader;
+import in.bank.hdfc.auth.hybridAuth.dto.QRGenerateResponse;
+import in.bank.hdfc.auth.hybridAuth.dto.QRHeader;
+import in.bank.hdfc.auth.hybridAuth.dto.QrValidateResponse;
+import in.bank.hdfc.auth.hybridAuth.dto.SessionDataDTO;
+import in.bank.hdfc.auth.hybridAuth.entity.QRSession;
+import in.bank.hdfc.auth.hybridAuth.enums.AuthType;
+import in.bank.hdfc.auth.hybridAuth.repository.QRSessionRepository;
+import in.bank.hdfc.auth.hybridAuth.util.JwtUtil;
+import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final AuthSessionRepository repository;
-    private final SmsClient smsClient;
-    private final WhatsAppClient whatsAppClient;
+        private final QRSessionRepository qrSessionRepository;
+        private final JwtUtil jwtUtil;
 
-    public AuthInitResponse initiateAuth(String mobile, AuthType authType) {
+        public AuthDataDTO initiateAuth(JourneyHeader journeyName) {
 
-        AuthSession session = AuthSession.builder()
-                .mobileNumber(mobile)
-                .authType(authType)
-                .status("PENDING")
-                .createdAt(LocalDateTime.now())
-                .expiresAt(LocalDateTime.now().plusMinutes(1))
-                .build();
+                String token = jwtUtil.generateToken();
 
-        repository.save(session);
-
-        switch (authType) {
-            case OTP -> handleOtp(mobile, session);
-            case WA -> handleWhatsApp(mobile, session);
-            case QR -> generateQrSession(mobile, session);
+                return new AuthDataDTO(
+                                token,
+                                "Bearer",
+                                jwtUtil.getExpirationInSeconds());
         }
 
-        return new AuthInitResponse(
-                session.getSessionId(),
-                session.getStatus());
-    }
+        // qr generate
+        public QRGenerateResponse qrGenerate(QRHeader header) {
 
-    // handle otp session creation 
-    private void handleOtp(String mobile, AuthSession session) {
+                long currentTime = System.currentTimeMillis();
 
-        String otp = String.valueOf(
-                ThreadLocalRandom.current().nextInt(100000, 999999));
+                QRSession session = QRSession.builder()
+                                .userAgent(header.getUserAgent())
+                                .status("PENDING")
+                                .createdAt(LocalDateTime.now())
+                                .expiresIn(LocalDateTime.now().plusMinutes(1))
+                                .authType(AuthType.QR)
+                                .journeyId(UUID.randomUUID().toString())
+                                .journeyName("LAS")
+                                .build();
 
-        session.setOtpHash(otp);
-        repository.save(session);
+                qrSessionRepository.save(session);
 
-        smsClient.sendOtp(mobile, otp);
-    }
+                String deeplink = "http://your-mb-app-url/content/dam/hdfc-bank-cms/assets/corebanking/mb/nolang/v1/kavach/app_download.html?txn=nb-ln&ulid="
+                                + session.getQrId() + "&ts=" + currentTime;
 
-    // handle whatsapp session creation
-    private void handleWhatsApp(String mobile, AuthSession session) {
+                // 🔥 Generate Base64 QR
+                String base64Qr = jwtUtil.generateBase64Qr(deeplink);
 
-        whatsAppClient.sendAuthPush(
-                mobile,
-                session.getSessionId());
-    }
-
-    // generate QR session
-    private void generateQrSession(String mobile, AuthSession session) {
-
-        String qrToken = UUID.randomUUID().toString();
-
-        session.setQrToken(qrToken);
-
-        repository.save(session);
-
-    }
-
-    public OtpValidateResponse validateOtp(String sessionId, String otp) {
-
-        AuthSession session = repository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        // Check auth type
-        if (!AuthType.OTP.equals(session.getAuthType())) {
-            throw new RuntimeException("Invalid auth type");
+                return new QRGenerateResponse(
+                                session.getQrId(),
+                                session.getCreatedAt(),
+                                session.getExpiresIn(),
+                                deeplink,
+                                base64Qr // 👈 add this field
+                );
         }
 
-        // Check expiry
-        // if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
-        //     session.setStatus("EXPIRED");
-        //     repository.save(session);
+        public SessionDataDTO fetchSession(QRHeader header, String qrId) {
 
-        //     return new OtpValidateResponse(
-        //             session.getSessionId(),
-        //             "EXPIRED",
-        //             false);
+                QRSession session = qrSessionRepository
+                                .findById(qrId)
+                                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+                if (session.getExpiresIn().isBefore(LocalDateTime.now())) {
+                        session.setStatus("EXPIRED");
+                        qrSessionRepository.save(session);
+                }
+
+                return new SessionDataDTO(
+                                "ETB",
+                                true,
+                                session.getStatus());
+        }
+
+        @Transactional
+        public QrValidateResponse validateQR(QRHeader header, String qrId) {
+
+                System.out.println("QR VALIDATE REQUEST FOR ID: " + qrId);
+
+                QRSession session = qrSessionRepository
+                                .findById(qrId)
+                                .orElseThrow(() -> new RuntimeException("QR session not found"));
+
+                System.out.println("Current status in DB: " + session.getStatus());
+
+                if (session.getExpiresIn().isBefore(LocalDateTime.now())) {
+
+                        System.out.println("SESSION EXPIRED");
+
+                        session.setStatus("EXPIRED");
+                        qrSessionRepository.saveAndFlush(session);
+
+                        return new QrValidateResponse(qrId, "EXPIRED", false);
+                }
+
+                System.out.println("SETTING STATUS TO APPROVED");
+
+                session.setStatus("APPROVED");
+                qrSessionRepository.saveAndFlush(session);
+
+                return new QrValidateResponse(qrId, "APPROVED", true);
+        }
+
+        // public QRGenerateResponse qrGenerate(QRHeader header, JourneyData data) {
+
+        // QRSession session = qrSessionRepository.findByJourneyId(data.getJourneyId())
+        // .orElseThrow(() -> new RuntimeException("Invalid Journey Id"));
+
+        // if (!session.getJourneyName().equals(data.getJourneyName())) {
+        // throw new RuntimeException("Journey Name mismatch");
         // }
 
-        // Check OTP match
-        if (session.getOtpHash() != null &&
-                session.getOtpHash().equals(otp)) {
+        // if (session.getExpiresIn().isBefore(LocalDateTime.now())) {
+        // throw new RuntimeException("Session Expired");
+        // }
 
-            session.setStatus("APPROVED");
-            repository.save(session);
+        // QRSession session1 = QRSession.builder()
+        // .userAgent(header.getUserAgent())
+        // .status("PENDING")
+        // .createdAt(LocalDateTime.now())
+        // .expiresIn(LocalDateTime.now().plusMinutes(1))
+        // .authType(AuthType.QR)
+        // .journeyId(UUID.randomUUID().toString())
+        // .journeyName("LAS")
+        // .build();
 
-            return new OtpValidateResponse(
-                    session.getSessionId(),
-                    "APPROVED",
-                    true);
-        }
+        // qrSessionRepository.save(session1);
 
-        // Wrong OTP
-        session.setStatus("REJECTED");
-        repository.save(session);
+        // String deeplink =
+        // "http://your-mb-app-url/content/dam/hdfc-bank-cms/assets/corebanking/mb/nolang/v1/kavach/app_download.html?txn=nb-ln&ulid=1234&ts=1772004964615\n"
+        // + //
+        // "" + session.getQrId();
 
-        return new OtpValidateResponse(
-                session.getSessionId(),
-                "REJECTED",
-                false);
-    }
+        // return new QRGenerateResponse(
+        // session.getQrId(),
+        // session.getCreatedAt(),
+        // session.getExpiresIn(),
+        // deeplink);
 
-    // validate QR
-    public QrValidateResponse validateQr(String qrToken) {
-
-        AuthSession session = repository.findByQrToken(qrToken)
-                .orElseThrow(() -> new RuntimeException("Invalid QR"));
-
-        if (!AuthType.QR.equals(session.getAuthType())) {
-            throw new RuntimeException("Invalid auth type");
-        }
-
-        if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
-            session.setStatus("EXPIRED");
-            repository.save(session);
-
-            return new QrValidateResponse(
-                    session.getSessionId(),
-                    "EXPIRED",
-                    false);
-        }
-
-        return new QrValidateResponse(
-                session.getSessionId(),
-                session.getStatus(),
-                true);
-    }
-
-    // update session status
-    public void updateSessionStatus(String sessionId, String action) {
-
-        AuthSession session = repository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        if ("APPROVED".equals(action)) {
-            session.setStatus("APPROVED");
-        } else {
-            session.setStatus("REJECTED");
-        }
-
-        repository.save(session);
-    }
-
-    // reject session
-    public void rejectSession(String sessionId, String action){
-        AuthSession session = repository.findById(sessionId)
-        .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        session.setStatus("REJECTED");
-
-        repository.save(session);
-
-    }
-
-    // fetch session
-    public SessionFetchResponse fetchSession(String sessionId) {
-
-        AuthSession session = repository
-                .findById(sessionId)
-                .orElseThrow();
-
-        if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
-            session.setStatus("EXPIRED");
-            repository.save(session);
-        }
-
-        return new SessionFetchResponse(session.getStatus());
-    }
+        // }
 }

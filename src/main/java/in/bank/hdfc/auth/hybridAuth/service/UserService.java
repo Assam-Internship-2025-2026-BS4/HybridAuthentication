@@ -5,13 +5,11 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
-
 import in.bank.hdfc.auth.hybridAuth.dto.CreateUserRequest;
 import in.bank.hdfc.auth.hybridAuth.dto.IdentifyUserResponse;
+import in.bank.hdfc.auth.hybridAuth.dto.QRHeader;
 import in.bank.hdfc.auth.hybridAuth.dto.UserResponse;
-import in.bank.hdfc.auth.hybridAuth.entity.AuthSession;
 import in.bank.hdfc.auth.hybridAuth.entity.User;
-import in.bank.hdfc.auth.hybridAuth.repository.AuthSessionRepository;
 import in.bank.hdfc.auth.hybridAuth.repository.UserDetailsRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -19,84 +17,74 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserDetailsRepository userRepository;
+        private final UserDetailsRepository userRepository;
 
-    private final AuthSessionRepository repository;
+        public UserResponse fetchUserDetails(QRHeader header, String customerId) {
 
-    public UserResponse fetchUserDetails(String sessionId) {
+                User user = userRepository.findByCustomerId(customerId)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        AuthSession session = repository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Invalid Session Id"));
+                return new UserResponse(
+                                user.getCustomerId(),
+                                user.getAccountNumber(),
+                                user.getName(),
+                                user.getMobileNumber(),
+                                user.getDOB(),
+                                user.getPanNumber(),
+                                user.getEmail(),
+                                user.getWhatsAppRegistered());
+        }
 
-        User user = userRepository.findByMobileNumber(session.getMobileNumber())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        public List<UserResponse> fetchAllUsers() {
+                List<User> users = userRepository.findAll();
+                return users.stream()
+                                .map(user -> new UserResponse(
+                                                user.getCustomerId(),
+                                                user.getAccountNumber(),
+                                                user.getName(),
+                                                user.getMobileNumber(),
+                                                user.getDOB(),
+                                                user.getPanNumber(),
+                                                user.getEmail(),
+                                                user.getWhatsAppRegistered()))
+                                .toList();
+        }
 
-        // if(session.getExpiresAt().isBefore(LocalDateTime.now()))
-        // throw new RuntimeException("Session expired");
+        public IdentifyUserResponse identifyUser(String mobileNumber) {
+                return userRepository.findByMobileNumber(mobileNumber)
+                                .map(user -> new IdentifyUserResponse(
+                                                true,
+                                                Boolean.TRUE.equals(user.getWhatsAppRegistered()),
+                                                user.getName()))
+                                .orElse(new IdentifyUserResponse(
+                                                false,
+                                                false,
+                                                null));
+        }
 
-        return new UserResponse(
-                user.getCustomerId(),
-                user.getAccountNumber(),
-                user.getName(),
-                user.getMobileNumber(),
-                user.getDOB(),
-                user.getPanNumber(),
-                user.getEmail(),
-                user.getWhatsAppRegistered());
-    }
+        public UserResponse createUser(QRHeader header, CreateUserRequest request) {
 
-    public List<UserResponse> fetchAllUsers(){
-        List<User> users = userRepository.findAll();
-        return users.stream()
-                .map(user -> new UserResponse(
-                        user.getCustomerId(),
-                        user.getAccountNumber(),
-                        user.getName(),
-                        user.getMobileNumber(),
-                        user.getDOB(),
-                        user.getPanNumber(),
-                        user.getEmail(),
-                        user.getWhatsAppRegistered()
-                ))
-                .toList();
-    }
+                User user = User.builder()
+                                .accountNumber(UUID.randomUUID().toString())
+                                .customerId(UUID.randomUUID().toString())
+                                .name(request.getName())
+                                .mobileNumber(request.getMobileNumber())
+                                .DOB(request.getDOB())
+                                .panNumber(request.getPanNumber())
+                                .email(request.getEmail())
+                                .whatsAppRegistered(request.getWhatsAppRegistered())
+                                .build();
 
-    public IdentifyUserResponse identifyUser(String mobileNumber){
-        return userRepository.findByMobileNumber(mobileNumber)
-        .map(user -> new IdentifyUserResponse(
-                true,
-                Boolean.TRUE.equals(user.getWhatsAppRegistered()),
-                user.getName()
-        ))
-        .orElse(new IdentifyUserResponse(
-                false,
-                false,
-                null
-        ));
-    }
+                User savedUser = userRepository.save(user);
 
-    public UserResponse createUser(CreateUserRequest request) {
-
-        User user = User.builder()
-                .customerId(UUID.randomUUID().toString())
-                .name(request.getName())
-                .mobileNumber(request.getMobileNumber())
-                .DOB(request.getDOB())
-                .panNumber(request.getPanNumber())
-                .email(request.getEmail())
-                .whatsAppRegistered(request.getWhatsAppRegistered())
-                .build();
-
-        User savedUser = userRepository.save(user);
-
-        return new UserResponse(
-                savedUser.getCustomerId(),
-                savedUser.getAccountNumber(),
-                savedUser.getName(),
-                savedUser.getMobileNumber(),
-                savedUser.getDOB(),
-                savedUser.getPanNumber(),
-                savedUser.getEmail(),
-                savedUser.getWhatsAppRegistered());
-    }
+                return new UserResponse(
+                                savedUser.getCustomerId(),
+                                savedUser.getAccountNumber(),
+                                savedUser.getName(),
+                                savedUser.getMobileNumber(),
+                                savedUser.getDOB(),
+                                savedUser.getPanNumber(),
+                                savedUser.getEmail(),
+                                savedUser.getWhatsAppRegistered());
+        }
 }
