@@ -9,5 +9,5 @@ import in.bank.hdfc.auth.hybridAuth.entity.User;
 public interface UserDetailsRepository extends JpaRepository<User, String>{
 
     Optional<User> findByMobileNumber(String mobileNumber);
-    
+    Optional<User> findByCustomerId(String customerId);
 }

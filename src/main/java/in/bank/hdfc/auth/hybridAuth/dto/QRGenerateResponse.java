@@ -15,4 +15,6 @@ public class QRGenerateResponse {
     private LocalDateTime expiresIn;
 
     private String deeplink;
+
+    private String qrImageBase64;
 }
