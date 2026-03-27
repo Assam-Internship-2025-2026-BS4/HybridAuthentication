@@ -2,7 +2,6 @@ package in.bank.hdfc.auth.hybridAuth.security;
 
 import java.io.IOException;
 
-import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -22,7 +21,6 @@ import in.bank.hdfc.auth.hybridAuth.util.JwtUtil;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Order(1)
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
@@ -33,15 +31,17 @@ public class JwtFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
-
-
         String path = request.getRequestURI();
 
-        if (path.startsWith("/ws")) {
+        if (path.contains("/api/v1/auth") ||
+                path.contains("/api/v1/whatsapp") ||
+                path.contains("/ws")) {
+
             filterChain.doFilter(request, response);
             return;
         }
+
+        String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);

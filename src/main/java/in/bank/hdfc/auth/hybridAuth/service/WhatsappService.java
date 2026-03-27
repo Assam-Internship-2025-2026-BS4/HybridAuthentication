@@ -26,7 +26,7 @@ public class WhatsappService {
 
     private final WebSocketSessionStore sessionStore;
 
-    public String registerDevice(QRHeader header, RegisterDeviceRequest request) {
+    public String registerDevice(RegisterDeviceRequest request) {
 
         User user = userRepository
                 .findByMobileNumber(request.getMobileNumber())
@@ -47,10 +47,10 @@ public class WhatsappService {
 
         userRepository.save(user);
 
-        return "Device Token " + deviceToken;
+        return deviceToken;
     }
 
-    public String createLoginSession(QRHeader header, WhatsappLoginRequest request) {
+    public String createLoginSession(WhatsappLoginRequest request) {
 
         User user = userRepository
                 .findByMobileNumber(request.getMobileNumber())
@@ -113,8 +113,7 @@ public class WhatsappService {
         sessionRepository.save(session);
     }
 
-    public String getSessionStatus(QRHeader header, String sessionId) {
-
+    public String getSessionStatus(String sessionId) {
         WhatsappLoginSession session = sessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found"));

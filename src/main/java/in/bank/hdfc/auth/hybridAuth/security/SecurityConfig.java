@@ -42,7 +42,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         
-                        .requestMatchers("/api/v1/auth/init").permitAll()
+                        .requestMatchers("/api/v1/auth/init", 
+                        "/api/v1/whatsapp/login", 
+                        "/api/v1/whatsapp/register",
+                        "/api/v1/whatsapp/status/**").permitAll()
 
                         .requestMatchers("/ws/**").permitAll()
 

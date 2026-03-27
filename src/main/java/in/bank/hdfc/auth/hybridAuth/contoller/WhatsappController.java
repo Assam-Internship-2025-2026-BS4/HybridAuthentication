@@ -15,24 +15,22 @@ public class WhatsappController {
     private final WhatsappService whatsappService;
 
     @PostMapping("/register")
-    public String register(@RequestHeader("User-Agent") String userAgent,
-            @RequestHeader("Authorization") String authorization,
+    public String register(
             @RequestBody RegisterDeviceRequest request) {
 
-        QRHeader header = new QRHeader(userAgent, authorization);
+        // QRHeader header = new QRHeader(userAgent, authorization);
 
-        return whatsappService.registerDevice(header, request);
+        return whatsappService.registerDevice(request);
     }
 
     @PostMapping("/login")
 
-    public String login(@RequestHeader("User-Agent") String userAgent,
-            @RequestHeader("Authorization") String authorization,
+    public String login(
             @RequestBody WhatsappLoginRequest request) {
 
-        QRHeader header = new QRHeader(userAgent, authorization);
+        // QRHeader header = new QRHeader(userAgent, authorization);
 
-        return whatsappService.createLoginSession(header, request);
+        return whatsappService.createLoginSession(request);
     }
 
     @PostMapping("/approve")
@@ -49,12 +47,10 @@ public class WhatsappController {
     @GetMapping("/status/{sessionId}")
 
     public String status(
-        @RequestHeader("User-Agent") String userAgent,
-        @RequestHeader("Authorization") String authorization,
         @PathVariable String sessionId) {
 
-        QRHeader header = new QRHeader(userAgent, authorization);
+        // QRHeader header = new QRHeader(userAgent, authorization);
 
-        return whatsappService.getSessionStatus(header,sessionId);
+        return whatsappService.getSessionStatus(sessionId);
     }
 }

@@ -63,7 +63,7 @@ public class AuthService {
                                 session.getCreatedAt(),
                                 session.getExpiresIn(),
                                 deeplink,
-                                base64Qr // 👈 add this field
+                                base64Qr
                 );
         }
 
