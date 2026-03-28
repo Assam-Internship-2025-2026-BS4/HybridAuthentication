@@ -1,0 +1,731 @@
+{
+  "info": {
+    "_postman_id": "7be445c6-abd1-451d-8d5d-a78bb8fc669b",
+    "name": "Test APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "38194951",
+    "_collection_link": "https://go.postman.co/collection/38194951-7be445c6-abd1-451d-8d5d-a78bb8fc669b?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth init",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// const res = pm.response.json();",
+              "// if (res && res.data && res.data.journeyId) {",
+              "//     pm.environment.set(\"journeyId\", res.data.journeyId);",
+              "//     console.log(\"journeyId saved:\", res.data.journeyId);",
+              "// } else {",
+              "//     console.log(\"No journeyId in response:\", JSON.stringify(res));",
+              "// }",
+              "",
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const res = pm.response.json();",
+              "pm.test(\"Has journeyId\", () => pm.expect(res.data.journeyId).to.be.a('string'));",
+              "pm.environment.set(\"journeyId\", res.data.journeyId);",
+              "pm.environment.set(\"journeyName\", res.data.journeyName);",
+              "console.log(\"journeyId:\", res.data.journeyId);",
+              "console.log(\"journeyName:\", res.data.journeyName);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "journeyName",
+            "value": "Gold Loan",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/init",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "init"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "OTP Init",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// const res = pm.response.json();",
+              "",
+              "// pm.environment.set(\"otpSessionId\", res.otpSessionId);",
+              "",
+              "// console.log(\"otpSessionId saved:\", res.otpSessionId);",
+              "// console.log(\">>> Check Spring Boot console for OTP code <<<\");",
+              "",
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const res = pm.response.json();",
+              "pm.test(\"SUCCESS\", () => pm.expect(res.status).to.eql(\"SUCCESS\"));",
+              "pm.test(\"Has otpSessionId\", () => pm.expect(res.otpSessionId).to.be.a('string'));",
+              "pm.environment.set(\"otpSessionId\", res.otpSessionId);",
+              "console.log(\"otpSessionId:\", res.otpSessionId);",
+              "console.log(\">>> Check Spring Boot console for OTP <<<\");"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-Latitude",
+            "value": "12.9716",
+            "type": "text"
+          },
+          {
+            "key": "X-Longitude",
+            "value": "77.5946",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"mobileNo\": \"9988776655\",\n    \"journeyId\": \"{{journeyId}}\",\n    \"journeyName\": \"{{journeyName}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/otp/init",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "otp",
+            "init"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "OTP Validate",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const res = pm.response.json();",
+              "pm.test(\"SUCCESS\", () => pm.expect(res.status).to.eql(\"SUCCESS\"));",
+              "pm.test(\"Has accessToken\", () => pm.expect(res.accessToken).to.be.a('string'));",
+              "pm.environment.set(\"jwt_token\", res.accessToken);",
+              "console.log(\"JWT saved. expiresIn:\", res.expiresIn, \"seconds\");",
+              "console.log(\"otpSessionId:\", res.otpSessionId);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"mobileNo\": \"9988776655\",\n    \"journeyId\": \"{{journeyId}}\",\n    \"otpSessionId\": \"{{otpSessionId}}\",\n    \"otp\": \"852164\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/otp/validate",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "otp",
+            "validate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User Details Fetch",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "",
+              "let res = pm.response.json();",
+              "",
+              "pm.test(\"SUCCESS\", () => pm.expect(res?.status).to.eql(\"SUCCESS\"));",
+              "",
+              "if (res && res.customerName && res.customerId) {",
+              "    console.log(\"Customer:\", res.customerName, \"| ID:\", res.customerId);",
+              "} else {",
+              "    console.log(\"Customer data missing:\", JSON.stringify(res));",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/user/details/fetch",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "user",
+            "details",
+            "fetch"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User Identify",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"mobileNo\": \"9988776655\",\n    \"pan\": \"LMNOP4321Z\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/user/details/identify",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "user",
+            "details",
+            "identify"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "QR Generate",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "",
+              "let res;",
+              "try { res = pm.response.json(); }",
+              "catch (e) {",
+              "  pm.test(\"Response is JSON\", () => { throw new Error(pm.response.text()); });",
+              "  return;",
+              "}",
+              "",
+              "pm.environment.set(\"qrSessionId\", res?.data?.qrSessionId);",
+              "pm.environment.set(\"qrCodeId\", res?.data?.qrCodeId);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"journeyId\": \"{{journeyId}}\",\n    \"journeyName\": \"{{journeyName}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/qr/generate",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "qr",
+            "generate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "QR Validate",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "",
+              "let res = pm.response.json();",
+              "",
+              "pm.test(\"Approved\", () => pm.expect(res?.authStatus).to.eql(\"Approved\"));",
+              "",
+              "if (res && res.accessToken) {",
+              "    pm.environment.set(\"jwt_token\", res.accessToken);",
+              "    console.log(\"Session approved. JWT saved.\");",
+              "} else {",
+              "    console.log(\"No accessToken in response:\", JSON.stringify(res));",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-devide-id",
+            "value": "ABC-12345",
+            "type": "text"
+          },
+          {
+            "key": "x-mobile-no",
+            "value": "9988776655",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"qrId\": \"{{qrCodeId}}\",\n    \"journeyId\": \"{{journeyId}}\",\n    \"qrSessionId\": \"{{qrSessionId}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/qr/validate",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "qr",
+            "validate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "QR Session Approve",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"journeyId\": \"{{journeyId}}\",\n    \"sessionId\": \"{{qrSessionId}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/session/approve",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "session",
+            "approve"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "QR Session reject",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"journeyId\": \"{{journeyId}}\",\n    \"sessionId\": \"{{qrSessionId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/session/reject",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "session",
+            "reject"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "QR Session Fetch",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Capture accessToken from session fetch response",
+              "if (pm.response.code === 200) {",
+              "    const responseBody = pm.response.json();",
+              "    ",
+              "    if (responseBody.status === \"SUCCESS\" && responseBody.accessToken) {",
+              "        // Store token in environment variable",
+              "        pm.environment.set(\"jwt_token\", responseBody.accessToken);",
+              "        ",
+              "        console.log(\"✓ JWT Token captured and stored\");",
+              "        console.log(\"Token expires in: \" + responseBody.expiresIn + \" seconds\");",
+              "    } else {",
+              "        console.log(\"✗ No accessToken in response or status not SUCCESS\");",
+              "    }",
+              "} else {",
+              "    console.log(\"✗ Session fetch failed with status: \" + pm.response.code);",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"journeyId\": \"{{journeyId}}\",\n    \"sessionId\": \"{{qrSessionId}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/session/fetch",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "session",
+            "fetch"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "whatsapp init",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "User-Agent",
+            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "type": "text"
+          },
+          {
+            "key": "X-Latitude",
+            "value": "28.7041",
+            "type": "text"
+          },
+          {
+            "key": "X-Longitude",
+            "value": "77.1025",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"journeyId\": \"{{journeyId}}\", \"journeyName\": \"{{journeyName}}\", \"mobileNo\": \"9988776655\" }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/wa/init",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "wa",
+            "init"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "wa webhook",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"journeyId\": \"{{journeyId}}\", \"waReply\": \"YES\" }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/wa/webhook",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "wa",
+            "webhook"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "wa session fetch",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Capture accessToken from session fetch response",
+              "if (pm.response.code === 200) {",
+              "    const responseBody = pm.response.json();",
+              "    ",
+              "    if (responseBody.status === \"SUCCESS\" && responseBody.accessToken) {",
+              "        // Store token in environment variable",
+              "        pm.environment.set(\"jwt_token\", responseBody.accessToken);",
+              "        ",
+              "        console.log(\"✓ JWT Token captured and stored\");",
+              "        console.log(\"Token expires in: \" + responseBody.expiresIn + \" seconds\");",
+              "    } else {",
+              "        console.log(\"✗ No accessToken in response or status not SUCCESS\");",
+              "    }",
+              "} else {",
+              "    console.log(\"✗ Session fetch failed with status: \" + pm.response.code);",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"journeyId\": \"{{journeyId}}\" }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/session/fetch",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "session",
+            "fetch"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "otpSessionId",
+      "value": ""
+    },
+    {
+      "key": "jwt_token",
+      "value": ""
+    }
+  ]
+}
