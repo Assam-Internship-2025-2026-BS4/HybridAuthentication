@@ -3,104 +3,118 @@
 ```mermaid
 ---
 config:
-  theme: redux-color
-  look: neo
+  theme: default
+  primaryColor: '#E8F4F8'
+  primaryBorderColor: '#2C3E50'
+  fontSize: 14px
 ---
-flowchart TB
-  subgraph Client[Client and Channel Layer]
-    NB[Net Banking Web UI]
-    MB[HDFC Mobile App]
-    WA[WhatsApp Channel]
-  end
+graph TB
+    subgraph Client["Client Layer"]
+        UI["Net Banking Portal"]
+        MB["Mobile Banking App"]
+        WA["WhatsApp"]
+    end
 
-  subgraph API[API Layer - Spring Boot Controllers]
-    AuthInitCtl[AuthInitController]
-    UserIdentifyCtl[UserIdentifyController]
-    OtpCtl[OtpController]
-    QrCtl[QrController]
-    WaCtl[WaAuthController]
-    SessionCtl[SessionController]
-    UserDetailsCtl[UserDetailsController]
-  end
+    subgraph Gateway["API Gateway & Security"]
+        LB["Load Balancer"]
+        CORS["CORS Configuration"]
+        RL["Rate Limiter"]
+    end
 
-  subgraph Service[Service and Utility Layer]
-    OtpSvc[OtpService]
-    SessionSvc[SessionLookupService]
-    JwtUtil[JwtUtil]
-    RateSvc[RateLimiterService]
-    ExpirySvc[ExpiryScheduler]
-    BrowserUtil[BrowserUtil]
-  end
+    subgraph Controllers["API Controllers"]
+        UserIdent["User Identify<br/>/user/details/identify"]
+        OtpCtrl["OTP<br/>/auth/otp/*"]
+        QrCtrl["QR Code<br/>/auth/qr/*"]
+        WaCtrl["WhatsApp<br/>/auth/wa/*"]
+        SessionCtrl["Session<br/>/auth/session/*"]
+    end
 
-  subgraph Repo[Repository Layer]
-    CustomerRepo[CustomerRepository]
-    OtpRepo[OtpSessionRepository]
-    QrRepo[QrSessionRepository]
-    WaRepo[WaSessionRepository]
-  end
+    subgraph Services["Business Services"]
+        UserSvc["User Service"]
+        OtpSvc["OTP Service"]
+        QrSvc["QR Service"]
+        WaSvc["WhatsApp Service"]
+        SessionSvc["Session Service"]
+        JwtUtil["JWT Utility"]
+    end
 
-  DB[(PostgreSQL)]
-  SmsProvider[(SMS or OTP Provider)]
-  WaProvider[(WhatsApp Provider or Webhook Source)]
+    subgraph Security["Security & Infrastructure"]
+        RateLim["Rate Limiter"]
+        Scheduler["Expiry Scheduler<br/>60s scan interval"]
+    end
 
-  NB -->|POST /api/v1/auth/init| AuthInitCtl
-  NB -->|POST /api/v1/user/details/identify| UserIdentifyCtl
-  UserIdentifyCtl --> CustomerRepo
-  CustomerRepo --> DB
+    subgraph Data["Data Layer"]
+        Customer["Customer"]
+        OtpTable["OTP Session"]
+        QrTable["QR Session"]
+        WaTable["WhatsApp Session"]
+        Database["PostgreSQL Database"]
+    end
 
-  NB -->|WA eligible: POST /api/v1/auth/wa/init| WaCtl
-  NB -->|OTP fallback: POST /api/v1/auth/otp/init| OtpCtl
+    subgraph External["Third Party Services"]
+        SMS["SMS Provider"]
+        WhatsApp_API["WhatsApp API"]
+        HDFC_MB_API["HDFC Mobile API"]
+    end
 
-  NB -->|POST /api/v1/auth/qr/generate| QrCtl
-  MB -->|POST /api/v1/auth/qr/validate| QrCtl
-  MB -->|POST /api/v1/auth/session/approve or reject| SessionCtl
-  NB -->|POST /api/v1/auth/session/fetch poll every 3 sec| SessionCtl
+    UI --> LB
+    MB --> LB
+    WA --> LB
 
-  OtpCtl --> OtpSvc
-  OtpCtl --> SessionSvc
-  OtpCtl --> RateSvc
-  OtpCtl --> JwtUtil
-  OtpCtl --> BrowserUtil
+    LB --> CORS
+    CORS --> RL
+    RL --> UserIdent
+    RL --> OtpCtrl
+    RL --> QrCtrl
+    RL --> WaCtrl
+    RL --> SessionCtrl
 
-  QrCtl --> SessionSvc
-  QrCtl --> RateSvc
-  QrCtl --> BrowserUtil
+    UserIdent --> UserSvc
+    OtpCtrl --> OtpSvc
+    QrCtrl --> QrSvc
+    WaCtrl --> WaSvc
+    SessionCtrl --> SessionSvc
 
-  WaCtl --> SessionSvc
-  WaCtl --> RateSvc
-  WaCtl --> BrowserUtil
+    OtpSvc --> JwtUtil
+    QrSvc --> JwtUtil
+    WaSvc --> JwtUtil
+    SessionSvc --> JwtUtil
 
-  SessionCtl --> SessionSvc
-  SessionCtl --> JwtUtil
-  SessionCtl --> CustomerRepo
+    OtpSvc --> RateLim
+    QrSvc --> RateLim
+    WaSvc --> RateLim
 
-  UserDetailsCtl --> SessionSvc
-  UserDetailsCtl --> JwtUtil
-  UserDetailsCtl --> CustomerRepo
+    UserSvc --> Customer
+    OtpSvc --> OtpTable
+    QrSvc --> QrTable
+    WaSvc --> WaTable
 
-  OtpSvc --> OtpRepo
-  SessionSvc --> OtpRepo
-  SessionSvc --> QrRepo
-  SessionSvc --> WaRepo
+    Customer --> Database
+    OtpTable --> Database
+    QrTable --> Database
+    WaTable --> Database
 
-  OtpCtl --> OtpRepo
-  QrCtl --> QrRepo
-  WaCtl --> WaRepo
+    Scheduler -.->|Monitor| OtpTable
+    Scheduler -.->|Monitor| QrTable
+    Scheduler -.->|Monitor| WaTable
 
-  ExpirySvc --> OtpRepo
-  ExpirySvc --> QrRepo
-  ExpirySvc --> WaRepo
+    OtpSvc -.-> SMS
+    WaSvc -.-> WhatsApp_API
+    QrSvc -.-> HDFC_MB_API
 
-  OtpSvc -->|Send OTP| SmsProvider
-  WaCtl -->|Send WA prompt| WaProvider
-  WaProvider -->|Webhook YES or NO| WaCtl
+    classDef clientStyle fill:#FFF9C4,stroke:#F57F17,stroke-width:2px,color:#000
+    classDef gatewayStyle fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#000
+    classDef controllerStyle fill:#F3E5F5,stroke:#6A1B9A,stroke-width:2px,color:#000
+    classDef serviceStyle fill:#E0F2F1,stroke:#00695C,stroke-width:2px,color:#000
+    classDef dataStyle fill:#FCE4EC,stroke:#C2185B,stroke-width:2px,color:#000
+    classDef externalStyle fill:#F1F8E9,stroke:#558B2F,stroke-width:2px,color:#000
 
-  OtpRepo --> DB
-  QrRepo --> DB
-  WaRepo --> DB
-  CustomerRepo --> DB
-
-  NB -->|POST /api/v1/user/details/fetch| UserDetailsCtl
+    class UI,MB,WA clientStyle
+    class LB,CORS,RL gatewayStyle
+    class UserIdent,OtpCtrl,QrCtrl,WaCtrl,SessionCtrl controllerStyle
+    class UserSvc,OtpSvc,QrSvc,WaSvc,SessionSvc,JwtUtil,RateLim,Scheduler serviceStyle
+    class Customer,OtpTable,QrTable,WaTable,Database dataStyle
+    class SMS,WhatsApp_API,HDFC_MB_API externalStyle
 ```
 
 ## Runtime Behavior Summary
